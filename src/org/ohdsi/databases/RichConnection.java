@@ -17,6 +17,7 @@
  ******************************************************************************/
 package org.ohdsi.databases;
 
+import java.nio.charset.Charset;
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -494,9 +495,18 @@ public class RichConnection {
 				for (int i = 1; i < metaData.getColumnCount() + 1; i++) {
 					String columnName = metaData.getColumnName(i);
 					if (columnNames.add(columnName)) {
-						String value;
+						String value = null;
 						try {
-							value = resultSet.getString(i);
+							int type = metaData.getColumnType(i);
+							if (type == Types.BLOB)	{
+								java.sql.Blob blob = resultSet.getBlob(i);
+								if (blob != null) {
+									byte[] blobData = blob.getBytes(1, (int)blob.length());
+									value = new String(blobData, Charset.forName("GBK"));
+								}
+							} else {
+								value = resultSet.getString(i);
+							}
 						} catch (Exception e) {
 							value = "";
 						}
